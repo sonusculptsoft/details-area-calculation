@@ -18,4 +18,4 @@ class MyAPI(Resource):
 api.add_resource(MyAPI, "/my-api")
 
 if __name__ == "__main__":
-    app.run(debug=True, port=6767)
+    app.run(debug=True, port=6767, host="0.0.0.0")
