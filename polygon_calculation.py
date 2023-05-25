@@ -31,7 +31,7 @@ def remove_recangle_from_polygon(polygon, rectangle):
     return gdf_difference.geometry.unary_union
 
 
-def plot_rectangle(new_polygon):
+def plot_rectangle(new_polygon, region_id):
     new_child_polygon_list = []
     # Plot the new polygon(s)
     if isinstance(new_polygon, Polygon):
@@ -41,6 +41,7 @@ def plot_rectangle(new_polygon):
         return_response.append(
             {
                 "is_rectangle": True,
+                "coord_id": region_id,
                 "coords": list(child_rectangel.exterior.coords),
             }
         )
@@ -60,6 +61,7 @@ def plot_rectangle(new_polygon):
                 return_response.append(
                     {
                         "is_rectangle": True,
+                        "coord_id": region_id,
                         "coords": list(child_rectangel.exterior.coords),
                     }
                 )
@@ -72,17 +74,22 @@ def plot_rectangle(new_polygon):
                 return_response.append(
                     {
                         "is_rectangle": False,
+                        "coord_id": region_id,
                         "coords": list(child_polygon.exterior.coords),
                     }
                 )
     return new_child_polygon_list
 
 
-def plot_polygon(new_polygon, is_rectangle=False):
+def plot_polygon(new_polygon, is_rectangle=False, region_id=None):
     # Plot the new polygon(s)
     if isinstance(new_polygon, Polygon):
         return_response.append(
-            {"is_rectangle": is_rectangle, "coords": list(new_polygon.exterior.coords)}
+            {
+                "is_rectangle": is_rectangle,
+                "coord_id": region_id,
+                "coords": list(new_polygon.exterior.coords),
+            }
         )
 
     if isinstance(new_polygon, MultiPolygon):
@@ -91,6 +98,7 @@ def plot_polygon(new_polygon, is_rectangle=False):
             return_response.append(
                 {
                     "is_rectangle": is_rectangle,
+                    "coord_id": region_id,
                     "coords": list(child_polygon.exterior.coords),
                 }
             )
@@ -101,9 +109,10 @@ return_response = []
 
 def manage(region_list):
     for region in region_list:
-        polygon = np.array([region], np.int32)
+        region_id = region.get("id")
+        polygon = np.array([region.get("coords")], np.int32)
 
-        sheplay_polygon = Polygon(region)
+        sheplay_polygon = Polygon(region.get("coords"))
 
         # Check if it is a rectangle
         if sheplay_polygon.is_valid and sheplay_polygon.geom_type == "Polygon":
@@ -120,7 +129,7 @@ def manage(region_list):
 
             if is_rectangle:
                 print("sheplay_polygon is a rectangle")
-                plot_polygon(sheplay_polygon, is_rectangle=True)
+                plot_polygon(sheplay_polygon, is_rectangle=True, region_id=region_id)
             else:
                 print("sheplay_polygon is not a rectangle")
 
@@ -131,6 +140,7 @@ def manage(region_list):
                 return_response.append(
                     {
                         "is_rectangle": is_rectangle,
+                        "coord_id": region_id,
                         "coords": list(sheplay_rectangle.exterior.coords),
                     }
                 )
@@ -139,15 +149,17 @@ def manage(region_list):
                     polygon=sheplay_polygon, rectangle=sheplay_rectangle
                 )
 
-                new_child_polygon = plot_rectangle(new_polygon=new_polygon)
+                new_child_polygon = plot_rectangle(
+                    new_polygon=new_polygon, region_id=region_id
+                )
 
                 if len(new_child_polygon):
                     for new_cc_polygon in new_child_polygon:
-                        cc = plot_rectangle(new_polygon=new_cc_polygon)
+                        cc = plot_rectangle(
+                            new_polygon=new_cc_polygon, region_id=region_id
+                        )
                         if len(cc):
                             for i in cc:
-                                plot_polygon(i)
+                                plot_polygon(i, region_id=region_id)
+
     return return_response
-
-
-print(return_response)
